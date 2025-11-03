@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Mark Viewer</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <h1 style="text-align:center;">📈 Student Mark Viewer</h1>
+  <div class="container">
+    <div class="chart-container">
+      <canvas id="markChart"></canvas>
+    </div>
+    <div class="rank-container">
+      <h3>🏅 Rank List</h3>
+      <ul id="rankList"></ul>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = window.location.origin;
+
+    async function loadData() {
+      const res = await fetch(`${API_URL}/marks`);
+      const data = await res.json();
+
+      // Rank List
+      const rankList = document.getElementById("rankList");
+      rankList.innerHTML = "";
+      data.forEach(m => {
+        const li = document.createElement("li");
+        li.textContent = `${m.rank}. ${m.name} (${m.roll}) - ${m.marks} Marks`;
+        rankList.appendChild(li);
+      });
+
+      // Chart
+      const ctx = document.getElementById("markChart").getContext("2d");
+      const months = [...new Set(data.map(m => m.month))];
+      const avgMarks = months.map(month => {
+        const monthData = data.filter(m => m.month === month);
+        return monthData.reduce((a, b) => a + b.marks, 0) / monthData.length;
+      });
+
+      new Chart(ctx, {
+        type: "bar",
+        data: {
+          labels: months,
+          datasets: [{
+            label: "Average Marks",
+            data: avgMarks,
+            borderWidth: 2,
+            backgroundColor: "orange",
+          }]
+        },
+        options: { responsive: true, scales: { y: { beginAtZero: true } } }
+      });
+    }
+
+    loadData();
+  </script>
+</body>
+</html>
