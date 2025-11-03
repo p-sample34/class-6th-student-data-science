@@ -30,30 +30,27 @@
       rankList.innerHTML = "";
       data.forEach(m => {
         const li = document.createElement("li");
-        li.textContent = `${m.rank}. ${m.name} (${m.roll}) - ${m.marks} Marks`;
+        li.textContent = `${m.rank}. ${m.name} (${m.roll}) - ${m.obtainedMarks}/${m.totalMarks}`;
         rankList.appendChild(li);
       });
 
-      // Chart
+      // Chart: Each student's performance
       const ctx = document.getElementById("markChart").getContext("2d");
-      const months = [...new Set(data.map(m => m.month))];
-      const avgMarks = months.map(month => {
-        const monthData = data.filter(m => m.month === month);
-        return monthData.reduce((a, b) => a + b.marks, 0) / monthData.length;
-      });
-
       new Chart(ctx, {
         type: "bar",
         data: {
-          labels: months,
+          labels: data.map(m => `${m.name} (${m.roll})`),
           datasets: [{
-            label: "Average Marks",
-            data: avgMarks,
-            borderWidth: 2,
+            label: "Obtained Marks",
+            data: data.map(m => m.obtainedMarks),
             backgroundColor: "orange",
+            borderWidth: 2
           }]
         },
-        options: { responsive: true, scales: { y: { beginAtZero: true } } }
+        options: {
+          responsive: true,
+          scales: { y: { beginAtZero: true } }
+        }
       });
     }
 
@@ -61,4 +58,3 @@
   </script>
 </body>
 </html>
-
