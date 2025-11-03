@@ -19,21 +19,21 @@ mongoose.connect(process.env.MONGO_URL)
   .then(() => console.log("✅ MongoDB Connected"))
   .catch(err => console.log("❌ MongoDB Error:", err));
 
-// Upload new marks
+// Add Marks
 app.post("/upload", async (req, res) => {
   try {
     const mark = new Mark(req.body);
     await mark.save();
-    res.json({ success: true, message: "Mark uploaded successfully!" });
+    res.json({ success: true, message: "Marks uploaded successfully!" });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// Fetch all marks + auto rank
+// Get all marks + rank calculation
 app.get("/marks", async (req, res) => {
   const marks = await Mark.find({});
-  const sorted = marks.sort((a, b) => b.marks - a.marks);
+  const sorted = marks.sort((a, b) => b.obtainedMarks - a.obtainedMarks);
   const ranked = sorted.map((m, i) => ({ ...m._doc, rank: i + 1 }));
   res.json(ranked);
 });
@@ -71,7 +71,7 @@ app.get("/report/:roll", async (req, res) => {
   doc.fontSize(20).text(`Student Report - Roll: ${roll}`, { align: "center" });
   doc.moveDown();
   marks.forEach((m) => {
-    doc.fontSize(14).text(`${m.month} | ${m.subject}: ${m.marks} marks`);
+    doc.fontSize(14).text(`${m.month} | Obtained: ${m.obtainedMarks}/${m.totalMarks}`);
   });
   doc.end();
 
