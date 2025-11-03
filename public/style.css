@@ -37,6 +37,11 @@ button:hover {
   background: gold;
 }
 
+canvas {
+  width: 100% !important;
+  height: 400px !important; /* Bigger graph */
+}
+
 @media (max-width: 768px) {
   .chart-container, .rank-container, .upload-container {
     width: 90%;
