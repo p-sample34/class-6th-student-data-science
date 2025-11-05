@@ -5,11 +5,11 @@
   <title>Mark Viewer</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-  <!-- Excel Export Library -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <!-- jsPDF & AutoTable (for Non-Editable PDF Export) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 
   <style>
     body {
@@ -79,13 +79,9 @@
       border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     }
 
-    li:last-child {
-      border-bottom: none;
-    }
-
     .download-btn {
       display: block;
-      margin: 18px auto;
+      margin: 20px auto;
       padding: 12px 22px;
       background: #ffb400;
       color: #000;
@@ -95,15 +91,18 @@
       font-size: 1rem;
       cursor: pointer;
       transition: 0.3s;
+      width: 100%;
+      max-width: 350px;
     }
 
     .download-btn:hover {
       background: #ffcc33;
+      transform: scale(1.03);
     }
 
     @media (max-width: 600px) {
       li { font-size: 0.85rem; padding: 6px; }
-      .download-btn { width: 100%; }
+      h1 { font-size: 1.3rem; }
       .chart-container { min-height: 250px; }
     }
   </style>
@@ -123,8 +122,8 @@
     </div>
   </div>
 
-  <!-- Excel Export Button -->
-  <button class="download-btn" id="downloadExcelBtn">📄 Download Excel (Rank List)</button>
+  <!-- PDF Export Button -->
+  <button class="download-btn" id="downloadPdfRankBtn">📄 Download Rank Sheet </button>
 
   <script>
     const API_URL = "https://class-6th-student-data-science.onrender.com";
@@ -135,6 +134,7 @@
       const data = await res.json();
 
       data.sort((a, b) => b.obtainedMarks - a.obtainedMarks);
+
       data.forEach((m, i) => {
         m.rank = i + 1;
         m.percentage = ((m.obtainedMarks / m.totalMarks) * 100).toFixed(2);
@@ -156,7 +156,7 @@
         data: {
           labels: data.map(m => `${m.name} (${m.roll})`),
           datasets: [{
-            label: "Obtained Marks",
+            label: "Marks",
             data: data.map(m => m.obtainedMarks),
             backgroundColor: "rgba(255, 180, 0, 0.8)",
             borderColor: "#ffb400",
@@ -175,24 +175,31 @@
       });
     }
 
-    // ✅ Excel Export
-    document.getElementById("downloadExcelBtn").addEventListener("click", () => {
+    // ✅ Non-Editable PDF Export
+    document.getElementById("downloadPdfRankBtn").addEventListener("click", () => {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
       const date = new Date().toLocaleDateString();
 
-      const exportData = studentData.map(m => ({
-        Date: date,
-        Rank: m.rank,
-        Name: m.name,
-        Roll: m.roll,
-        "Obtained Marks": m.obtainedMarks,
-        "Total Marks": m.totalMarks,
-        Percentage: m.percentage + "%"
-      }));
+      doc.setFontSize(16);
+      doc.text("Student Rank Sheet", 14, 15);
+      doc.setFontSize(11);
+      doc.text(`Date: ${date}`, 14, 22);
 
-      const worksheet = XLSX.utils.json_to_sheet(exportData);
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, "Rank List");
-      XLSX.writeFile(workbook, `Student_Rank_List_${date}.xlsx`);
+      const tableData = studentData.map(m => [
+        m.rank, m.name, m.roll, m.obtainedMarks, m.totalMarks, m.percentage + "%"
+      ]);
+
+      doc.autoTable({
+        head: [["Rank", "Name", "Roll", "Marks", "Total", "%"]],
+        body: tableData,
+        startY: 30,
+        theme: "grid",
+        styles: { halign: "center" },
+        headStyles: { fillColor: [255, 180, 0], textColor: 0 }
+      });
+
+      doc.save(`Rank_Sheet_${date}.pdf`);
     });
 
     loadData();
